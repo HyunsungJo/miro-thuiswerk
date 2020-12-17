@@ -51,7 +51,7 @@ object LogParser extends SparkJob {
   }
 
   def processTimestamp(ds: Dataset[_]): DataFrame = {
-    ds.withColumn("time", to_timestamp(col("timestamp"), "yyyy-dd-MM'T'HH:mm:ss.SSS'Z'"))
+    ds.withColumn("time", to_timestamp(col("timestamp"), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))
       .withColumn("date", col("time").cast(DateType))
   }
 

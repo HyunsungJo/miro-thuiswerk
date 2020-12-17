@@ -6,7 +6,7 @@ spark-submit \
 --class com.miro.spark.userevents.LogParser \
 /Users/jo/Development/miro-thuiswerk/target/scala-2.12/miro-thuiswerk-assembly-0.0.1-SNAPSHOT.jar \
 --storage "local" \
---input-path "./data/dataset_small.json" \
+--input-path "./data/dataset.json" \
 --output-path "./output" \
 --bucket-size 10 \
 --overwrite true
@@ -61,5 +61,8 @@ spark-submit \
 - hyper-log-log
 - rdd vs datafram vs dataset
 - cache & persist vs checkpointing
+
+## FEEDBACK
+- Timestamp format is different in the dataset vs pdf example
 
 
