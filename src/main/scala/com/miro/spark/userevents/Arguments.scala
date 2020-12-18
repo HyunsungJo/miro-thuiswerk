@@ -8,15 +8,15 @@ trait Arguments {
 
 case class LogParserArguments(
   storage: String = "local",
-  inputPath: String = "",
-  outputPath: String = "",
+  inputPath: String = "./data/dataset.json",
+  outputPath: String = "./spark-warehouse",
   bucketSize: Int = 10,
-  overwrite: Boolean = false,
+  overwrite: Boolean = false
 ) extends Arguments
 
 case class StatsGeneratorArguments(
   storage: String = "local",
-  tablePath: String = "",
+  tablePath: String = "./spark-warehouse",
   period: String = "week"
 ) extends Arguments
 
@@ -32,11 +32,11 @@ class ArgumentsParser {
         .action((x, c) => c.copy(storage = x))
         .text("local or remote storage"),
 
-      opt[String]('i', "input-path").required
+      opt[String]('i', "input-path")
         .action((x, c) => c.copy(inputPath = x))
         .text("path of input JSON data"),
 
-      opt[String]('o', "output-path").required
+      opt[String]('o', "output-path")
         .action((x, c) => c.copy(outputPath = x))
         .text("path of output Parquet tables"),
 
@@ -63,7 +63,7 @@ class ArgumentsParser {
       opt[String]('s', "storage")
         .action((x, c) => c.copy(storage = x))
         .text("local or remote storage"),
-      opt[String]('t', "table-path").required
+      opt[String]('t', "table-path")
         .action((x, c) => c.copy(tablePath = x))
         .text("path of event Parquet tables"),
       opt[String]('p', "period")

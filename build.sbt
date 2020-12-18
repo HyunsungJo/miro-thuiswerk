@@ -31,8 +31,9 @@ Test / testOptions += Tests.Argument("-oD")
 IntegrationTest / testOptions += Tests.Argument("-oD")
 
 // Scoverage settings
-coverageExcludedPackages := "<empty>;.*storage.*"
-coverageMinimum := 70
+// TODO: bring coverage higher
+coverageExcludedPackages := "<empty>;.*Storage.*;.SharedSparkSession.*;.*Test.*;.*Arguments*.*;"
+coverageMinimum := 30
 coverageFailOnMinimum := true
 
 // Scalastyle settings

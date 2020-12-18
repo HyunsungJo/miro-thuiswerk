@@ -29,7 +29,6 @@ class LocalEventStorage(spark: SparkSession) extends EventStorage {
   import spark.implicits._
 
   private def readJSON[T: Encoder](location: String) = spark.read
-    .option("inferSchema", "true")
     .json(location)
     .as[T]
 
@@ -55,11 +54,9 @@ class LocalEventStorage(spark: SparkSession) extends EventStorage {
   override def readParquetTable(event: String, path: String): Dataset[_] = {
     event match {
       case "registered" => spark.read
-        .option("inferSchema", "true")
         .parquet(s"$path/$event")
         .as[EventRegister]
       case "app_loaded" => spark.read
-        .option("inferSchema", "true")
         .parquet(s"$path/$event")
         .as[EventAppLoad]
       case _ => throw new Exception(s"Unsupported event type")
@@ -73,7 +70,6 @@ class LocalEventStorage(spark: SparkSession) extends EventStorage {
     .save(s"$path/temp")
 
   override def readTemp(event: String, path: String): DataFrame = spark.read
-    .option("inferSchema", "true")
     .parquet(s"$path/temp/event=$event")
 
   override def dropTemp(path: String): Unit = {
@@ -104,7 +100,7 @@ case class EventRaw(
   device_type: String,
   browser_version: String,
   channel: String,
-  campaign: String,
+  campaign: String
 )
 
 case class EventAppLoad(
@@ -112,7 +108,7 @@ case class EventAppLoad(
   time: java.sql.Timestamp,
   initiator_id: Long,
   device_type: String,
-  date: java.sql.Date,
+  date: java.sql.Date
 )
 
 case class EventRegister(
@@ -120,6 +116,6 @@ case class EventRegister(
   time: java.sql.Timestamp,
   initiator_id: Long,
   channel: String,
-  date: java.sql.Date,
+  date: java.sql.Date
 )
 

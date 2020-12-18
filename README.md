@@ -1,14 +1,14 @@
 # MIRO: Event Log Processor
 
+## Build
+```bash
+sbt build
+```
 ## Run Event Log Parser
 ```bash
 spark-submit \
 --class com.miro.spark.userevents.LogParser \
-/Users/jo/Development/miro-thuiswerk/target/scala-2.12/miro-thuiswerk-assembly-0.0.1-SNAPSHOT.jar \
---storage "local" \
---input-path "./data/dataset.json" \
---output-path "./output" \
---bucket-size 10 \
+./target/scala-2.12/miro-thuiswerk-assembly-0.0.1-SNAPSHOT.jar \
 --overwrite true
 ```
 
@@ -16,10 +16,7 @@ spark-submit \
 ```bash
 spark-submit \
 --class com.miro.spark.userevents.StatsGenerator \
-/Users/jo/Development/miro-thuiswerk/target/scala-2.12/miro-thuiswerk-assembly-0.0.1-SNAPSHOT.jar \
---storage "local" \
---table-path "./output" \
---period "week"
+./target/scala-2.12/miro-thuiswerk-assembly-0.0.1-SNAPSHOT.jar
 ```
 
 ## TODO

@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  ci:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        java-version: [1.8]
+
+    steps:
+      - name: Checkout 🛎
+        uses: actions/checkout@master
+
+      - name: Set up JDK ${{ matrix.java-version}} ☕
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java-version}}
+
+      - name: Compile 👨🏻‍💻
+        run: sbt clean compile
+
+      - name: Unit Test 🧪
+        run: sbt coverage test
+
+      - name: Code coverage
+        run: sbt coverageReport
+
+      - name: Code lint 👀
+        run: sbt scalastyle
+
+      - name: Build fat jar 📦
+        runt: sbt assembly
+
+      - name: Generate documents 📖
+        run: sbt doc
+
+      - name: Publish 🚀
+        run: sbt publish
+
+
+

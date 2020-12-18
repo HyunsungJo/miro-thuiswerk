@@ -1,5 +1,5 @@
 target/
 .idea/
 spark-warehouse/
-output/
+temp/
 *.pdf

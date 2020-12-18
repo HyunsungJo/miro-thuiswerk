@@ -9,7 +9,6 @@ object StatsGenerator extends SparkJob {
   override def appName: String = "stats-generator"
 
   override def run(spark: SparkSession, args: Array[String]): Unit = {
-
     // parse arguments
     val argsParser = new ArgumentsParser
     val arguments = OParser.parse(argsParser.statsGeneratorArgumentsParser, args, StatsGeneratorArguments()) match {
@@ -22,19 +21,20 @@ object StatsGenerator extends SparkJob {
     val period = arguments.period
     val storage = initStorage(spark, arguments.storage)
 
-
     // functions to get keys of current + next period
     val (thisPeriodFunc, nextPeriodFunc) = getPeriodFunctions(period)
 
     // process register events: add join col and rename duplicate cols
-    val registerEventsDs = storage.readParquetTable("registered", tablePath)
-    val registerEventsDf = addPeriodKey(registerEventsDs, nextPeriodFunc)
+    val registerEventsDf = storage
+      .readParquetTable("registered", tablePath)
+      .transform(addPeriodKey(nextPeriodFunc))
       .withColumnRenamed("initiator_id", "reg_initiator_id")
       .withColumnRenamed("period_key", "next_period_key")
 
     // process app load events: add join col
-    val appLoadEventsDs = storage.readParquetTable("app_loaded", tablePath)
-    val appLoadEventsDf = addPeriodKey(appLoadEventsDs, thisPeriodFunc)
+    val appLoadEventsDf = storage
+      .readParquetTable("app_loaded", tablePath)
+      .transform(addPeriodKey(thisPeriodFunc))
 
     // join dataframes on period_key and initiator_id to get target users
     // TODO: consider broadcast
@@ -59,7 +59,7 @@ object StatsGenerator extends SparkJob {
     if (totalUserCount == 0) {
       println(formulaStr)
     } else {
-      println(s"$formulaStr = ${(targetUserCount.toDouble / totalUserCount.toDouble) * 100}%")
+      println(s"$formulaStr = ${roundAt((targetUserCount.toDouble / totalUserCount.toDouble)*100, 2)} %")
     }
     println("")
     println("==========")
@@ -67,7 +67,7 @@ object StatsGenerator extends SparkJob {
 
   def aggCountDistinctUsers(df: DataFrame): Double = {
     // TODO: use `approx_count_distinct()` for speed over accuracy
-    val aggDf = df.agg(countDistinct("initiator_id")).cache()
+    val aggDf = df.agg(countDistinct("initiator_id"))
 
     if (aggDf.head(1).isEmpty) {
       0.0
@@ -82,12 +82,12 @@ object StatsGenerator extends SparkJob {
     val m: Map[String, (Column => Column, Column => Column)] = Map(
       "week" -> (getThisWeekKey, getNextWeekKey),
       "month" -> (getThisMonthKey, getNextMonthKey),
-      "year" -> (getThisYearKey, getNextYearKey),
+      "year" -> (getThisYearKey, getNextYearKey)
     )
     m("week")
   }
 
-  def addPeriodKey(ds: Dataset[_], f: Column => Column): DataFrame = {
+  def addPeriodKey(f: Column => Column)(ds: Dataset[_]): DataFrame = {
     ds.withColumn("period_key", f(col("time")))
   }
 
@@ -113,9 +113,12 @@ object StatsGenerator extends SparkJob {
   def getThisYearKey(column: Column): Column = year(column)
 
   def getNextYearKey(column: Column): Column = {
-    val DaysInYear = 365
-    val newDay = date_add(column, DaysInYear)
+    val MonthsInYear = 12
+    val newDay = add_months(column, MonthsInYear)
     year(newDay)
   }
+
+  def roundAt(n: Double, p: Int) = BigDecimal(n.toFloat).setScale(p, BigDecimal.RoundingMode.HALF_UP)
+
 }
 

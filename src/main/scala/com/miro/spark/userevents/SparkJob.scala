@@ -21,10 +21,12 @@ trait SparkJob {
 
   def appName: String
 
-  def initStorage(spark: SparkSession, storage: String): EventStorage = if (storage == "local") {
-    new LocalEventStorage(spark)
-  } else {
-    // TODO: implement remote storage
-    new RemoteEventStorage(spark)
+  def initStorage(spark: SparkSession, storage: String): EventStorage = {
+    if (storage == "local") {
+      new LocalEventStorage(spark)
+    } else {
+      // TODO: implement remote storage
+      new RemoteEventStorage(spark)
+    }
   }
 }
