@@ -34,14 +34,14 @@ jobs:
       - name: Unit Test 🧪
         run: sbt coverage test
 
-      - name: Code coverage
+      - name: Code coverage ✅
         run: sbt coverageReport
 
       - name: Code lint 👀
         run: sbt scalastyle
 
-      - name: Build fat jar 📦
-        runt: sbt assembly
+      - name: Build fat JAR 📦
+        run: sbt assembly
 
       - name: Generate documents 📖
         run: sbt doc

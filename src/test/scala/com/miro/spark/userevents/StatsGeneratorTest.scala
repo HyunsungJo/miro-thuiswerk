@@ -26,37 +26,37 @@ class StatsGeneratorTest extends AnyFlatSpec with should.Matchers {
   }
 
   "getThisYearKey()" should "get THIS YEAR" in {
-    val year = mockDs.transform(addPeriodKey(getThisYearKey))
+    val year = mockDs.transform(addJoinKey(getThisYearKey))
       .collect().head.getInt(lastIndex)
     assert(year === 2020)
   }
 
   "getNextYearKey()" should "get NEXT YEAR" in {
-    val year = mockDs.transform(addPeriodKey(getNextYearKey))
+    val year = mockDs.transform(addJoinKey(getNextYearKey))
       .collect().head.getInt(lastIndex)
     assert(year === 2021)
   }
 
   "getThisMonthKey()" should "get THIS MONTH" in {
-    val month = mockDs.transform(addPeriodKey(getThisMonthKey))
+    val month = mockDs.transform(addJoinKey(getThisMonthKey))
       .collect().head.getString(lastIndex)
     assert(month === "2020-12")
   }
 
   "getNextMonthKey()" should "get NEXT MONTH" in {
-    val month = mockDs.transform(addPeriodKey(getNextMonthKey))
+    val month = mockDs.transform(addJoinKey(getNextMonthKey))
       .collect().head.getString(lastIndex)
     assert(month === "2021-1")
   }
 
   "getThisWeekKey()" should "get THIS WEEK number" in {
-    val week = mockDs.transform(addPeriodKey(getThisWeekKey))
+    val week = mockDs.transform(addJoinKey(getThisWeekKey))
       .collect().head.getString(lastIndex)
     assert(week === "2020-53")
   }
 
   "getNextWeekKey()" should "get NEXT WEEK number" in {
-    val week = mockDs.transform(addPeriodKey(getNextWeekKey))
+    val week = mockDs.transform(addJoinKey(getNextWeekKey))
       .collect().head.getString(lastIndex)
     assert(week === "2021-1")
   }

@@ -10,7 +10,7 @@ case class LogParserArguments(
   storage: String = "local",
   inputPath: String = "./data/dataset.json",
   outputPath: String = "./spark-warehouse",
-  bucketSize: Int = 10,
+  partitionSize: Int = 100,
   overwrite: Boolean = false
 ) extends Arguments
 
@@ -25,7 +25,7 @@ class ArgumentsParser {
   val logParserArgumentsParser = {
     import logParserArgumentsBuilder._
     OParser.sequence(
-      programName("user-events: log-parser"),
+      programName("LogParser"),
       head("scopt", "4.x"),
 
       opt[String]('s', "storage")
@@ -41,15 +41,17 @@ class ArgumentsParser {
         .text("path of output Parquet tables"),
 
       opt[Int]('b', "bucket-size")
-        .action((x, c) => c.copy(bucketSize = x))
+        .action((x, c) => c.copy(partitionSize = x))
         .validate(x =>
-          if (0 < x && x <= 100) success
-          else failure("Value <bucket-size> must be in (0, 100]"))
+          if (0 < x && x <= 1000) { success }
+          else { failure("Value <bucket-size> must be in (0, 1000]") })
         .text("bucket size of output Parquet tables"),
 
       opt[Boolean]('w', "overwrite")
         .action((x, c) => c.copy(overwrite = x))
-        .text("whether job should overwrite output Parquet tables")
+        .text("whether job should overwrite output Parquet tables"),
+
+      help("help").text("prints this usage text")
     )
   }
 
@@ -58,7 +60,7 @@ class ArgumentsParser {
   val statsGeneratorArgumentsParser = {
     import statsGeneratorArgumentsBuilder._
     OParser.sequence(
-      programName("user-events: stats-generator"),
+      programName("StatsGenerator"),
       head("scopt", "4.x"),
       opt[String]('s', "storage")
         .action((x, c) => c.copy(storage = x))
@@ -69,9 +71,11 @@ class ArgumentsParser {
       opt[String]('p', "period")
         .action((x, c) => c.copy(period = x))
         .validate(x =>
-          if (Seq("week", "month", "year").contains(x)) success
-          else failure("Possible values of <period> are 'week', 'month', or 'year'"))
-        .text("period to watch conversion")
+          if (Seq("week", "month", "year").contains(x)) { success }
+          else { failure("Possible values of <period> are 'week', 'month', or 'year'") })
+        .text("period to generate the metric based on"),
+
+      help("help").text("prints this usage text")
     )
   }
 }

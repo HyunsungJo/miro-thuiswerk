@@ -1,10 +1,8 @@
 package com.miro.spark.userevents.storage
 
-import java.io.File
-
 import org.apache.spark.sql.{DataFrame, Dataset, Encoder, SaveMode, SparkSession}
-
-import scala.reflect.io.Directory
+import org.apache.spark.sql.functions._
+import com.miro.spark.userevents.Constants._
 
 /**
  * Storage defines all input and output logic - how and where tables and files
@@ -13,15 +11,9 @@ import scala.reflect.io.Directory
 trait EventStorage {
   def rawLogs(path: String): Dataset[EventRaw]
 
-  def writeParquetTable(ds: Dataset[_], event: String, outputPath: String, bucketSize: Int, overwrite: Boolean): Unit
+  def writeParquetTable(df: DataFrame, event: String, outputPath: String, bucketSize: Int, overwrite: Boolean): Unit
 
   def readParquetTable(event: String, outputPath: String): Dataset[_]
-
-  def writeTemp(ds: Dataset[_], outputPath: String): Unit
-
-  def readTemp(event: String, outputPath: String): DataFrame
-
-  def dropTemp(outputPath: String): Unit
 }
 
 class LocalEventStorage(spark: SparkSession) extends EventStorage {
@@ -34,18 +26,25 @@ class LocalEventStorage(spark: SparkSession) extends EventStorage {
 
   override def rawLogs(inputPath: String): Dataset[EventRaw] = readJSON[EventRaw](inputPath)
 
-  override def writeParquetTable(ds: Dataset[_],
+  override def writeParquetTable(
+    df: DataFrame,
     event: String,
     outputPath: String,
-    bucketSize: Int = 10,
+    partitionSize: Int = 200,
     overwrite: Boolean = false): Unit = {
 
-    val saveMode = if (overwrite) SaveMode.Overwrite else SaveMode.ErrorIfExists
+    val saveMode: SaveMode = if (overwrite) SaveMode.Overwrite else SaveMode.ErrorIfExists
 
-    ds.write
+    val ds: Dataset[_] = event match {
+      case EventValueRegistered => df.as[EventRegister]
+      case EventValueAppLoaded => df.as[EventAppLoad]
+      case _ => throw new Exception(s"Unsupported event type")
+    }
+
+    ds.repartition(partitionSize, col("date"))
+      .write
       .mode(saveMode)
-      .bucketBy(bucketSize, "date")
-      .sortBy("date")
+      .partitionBy("date")
       .format("parquet")
       .option("path", s"$outputPath/$event")
       .saveAsTable(event)
@@ -53,28 +52,14 @@ class LocalEventStorage(spark: SparkSession) extends EventStorage {
 
   override def readParquetTable(event: String, path: String): Dataset[_] = {
     event match {
-      case "registered" => spark.read
+      case EventValueRegistered => spark.read
         .parquet(s"$path/$event")
         .as[EventRegister]
-      case "app_loaded" => spark.read
+      case EventValueAppLoaded => spark.read
         .parquet(s"$path/$event")
         .as[EventAppLoad]
       case _ => throw new Exception(s"Unsupported event type")
     }
-  }
-
-  override def writeTemp(ds: Dataset[_], path: String): Unit = ds.write
-    .mode(SaveMode.Overwrite) // temp data always overwrites
-    .partitionBy("event")
-    .format("parquet")
-    .save(s"$path/temp")
-
-  override def readTemp(event: String, path: String): DataFrame = spark.read
-    .parquet(s"$path/temp/event=$event")
-
-  override def dropTemp(path: String): Unit = {
-    val targetDir = new Directory(new File(s"$path/temp"))
-    targetDir.deleteRecursively()
   }
 }
 
@@ -82,15 +67,14 @@ class LocalEventStorage(spark: SparkSession) extends EventStorage {
 class RemoteEventStorage(spark: SparkSession) extends EventStorage {
   override def rawLogs(path: String): Dataset[EventRaw] = ???
 
-  override def writeParquetTable(ds: Dataset[_], event: String, outputPath: String, bucketSize: Int, overwrite: Boolean): Unit = ???
+  override def writeParquetTable(
+    df: DataFrame,
+    event: String,
+    outputPath: String,
+    bucketSize: Int,
+    overwrite: Boolean): Unit = ???
 
   override def readParquetTable(event: String, outputPath: String): Dataset[_] = ???
-
-  override def writeTemp(ds: Dataset[_], outputPath: String): Unit = ???
-
-  override def readTemp(event: String, outputPath: String): DataFrame = ???
-
-  override def dropTemp(outputPath: String): Unit = ???
 }
 
 case class EventRaw(
@@ -104,18 +88,18 @@ case class EventRaw(
 )
 
 case class EventAppLoad(
-  event: String = "app_loaded",
+  event: String = EventValueAppLoaded,
   time: java.sql.Timestamp,
   initiator_id: Long,
-  device_type: String,
+  device_type: String = "n/a",
   date: java.sql.Date
 )
 
 case class EventRegister(
-  event: String = "registered",
+  event: String = EventValueRegistered,
   time: java.sql.Timestamp,
   initiator_id: Long,
-  channel: String,
+  channel: String = "n/a",
   date: java.sql.Date
 )
 

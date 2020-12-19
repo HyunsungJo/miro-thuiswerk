@@ -3,47 +3,50 @@ package com.miro.spark.userevents
 import org.apache.spark.sql.{Column, DataFrame, Dataset, SparkSession}
 import org.apache.spark.sql.functions._
 import scopt.OParser
+import com.miro.spark.userevents.storage.EventStorage
+import Constants._
 
 object StatsGenerator extends SparkJob {
 
-  override def appName: String = "stats-generator"
+  override def appName: String = Constants.AppNameStatsGenerator
 
   override def run(spark: SparkSession, args: Array[String]): Unit = {
     // parse arguments
-    val argsParser = new ArgumentsParser
-    val arguments = OParser.parse(argsParser.statsGeneratorArgumentsParser, args, StatsGeneratorArguments()) match {
+    val argsParser: ArgumentsParser = new ArgumentsParser
+    val arguments: StatsGeneratorArguments = OParser.parse(argsParser.statsGeneratorArgumentsParser, args, StatsGeneratorArguments()) match {
       case Some(config) => config
       case None => throw new IllegalArgumentException(s"invalid arguments for $appName")
     }
 
     // read config from arguments
-    val tablePath = arguments.tablePath
-    val period = arguments.period
-    val storage = initStorage(spark, arguments.storage)
+    val tablePath: String = arguments.tablePath
+    val period: String = arguments.period
+    val storage: EventStorage = initStorage(spark, arguments.storage)
 
     // functions to get keys of current + next period
     val (thisPeriodFunc, nextPeriodFunc) = getPeriodFunctions(period)
 
     // process register events: add join col and rename duplicate cols
-    val registerEventsDf = storage
-      .readParquetTable("registered", tablePath)
-      .transform(addPeriodKey(nextPeriodFunc))
+    val registerEventsDf: DataFrame = storage
+      .readParquetTable(EventValueRegistered, tablePath)
       .withColumnRenamed("initiator_id", "reg_initiator_id")
-      .withColumnRenamed("period_key", "next_period_key")
+      .transform(addJoinKey(nextPeriodFunc))
+      .repartition(ConfDefaultPartitionSize, col(ColumnJoinKey))
 
     // process app load events: add join col
-    val appLoadEventsDf = storage
-      .readParquetTable("app_loaded", tablePath)
-      .transform(addPeriodKey(thisPeriodFunc))
+    val appLoadEventsDf: DataFrame = storage
+      .readParquetTable(EventValueAppLoaded, tablePath)
+      .transform(addJoinKey(thisPeriodFunc))
+      .repartition(ConfDefaultPartitionSize, col(ColumnJoinKey))
 
     // join dataframes on period_key and initiator_id to get target users
     // TODO: consider broadcast
-    val targetUsersDf = appLoadEventsDf
-      .join(registerEventsDf, appLoadEventsDf("period_key") === registerEventsDf("next_period_key") &&
+    val targetUsersDf: DataFrame = appLoadEventsDf
+      .join(registerEventsDf, appLoadEventsDf(ColumnJoinKey) === registerEventsDf(ColumnJoinKey) &&
         appLoadEventsDf("initiator_id") === registerEventsDf("reg_initiator_id"), "inner")
 
     // union dataframes to get total users
-    val totalUsersDf = appLoadEventsDf
+    val totalUsersDf: DataFrame = appLoadEventsDf
       .select("initiator_id")
       .union(registerEventsDf
         .select("reg_initiator_id"))
@@ -59,7 +62,7 @@ object StatsGenerator extends SparkJob {
     if (totalUserCount == 0) {
       println(formulaStr)
     } else {
-      println(s"$formulaStr = ${roundAt((targetUserCount.toDouble / totalUserCount.toDouble)*100, 2)} %")
+      println(s"$formulaStr = metric: ${roundAt((targetUserCount.toDouble / totalUserCount.toDouble)*100, 2)} %")
     }
     println("")
     println("==========")
@@ -67,7 +70,7 @@ object StatsGenerator extends SparkJob {
 
   def aggCountDistinctUsers(df: DataFrame): Double = {
     // TODO: use `approx_count_distinct()` for speed over accuracy
-    val aggDf = df.agg(countDistinct("initiator_id"))
+    val aggDf: DataFrame = df.agg(countDistinct("initiator_id"))
 
     if (aggDf.head(1).isEmpty) {
       0.0
@@ -87,8 +90,8 @@ object StatsGenerator extends SparkJob {
     m("week")
   }
 
-  def addPeriodKey(f: Column => Column)(ds: Dataset[_]): DataFrame = {
-    ds.withColumn("period_key", f(col("time")))
+  def addJoinKey(f: Column => Column)(ds: Dataset[_]): DataFrame = {
+    ds.withColumn(ColumnJoinKey, f(col("time")))
   }
 
   def getThisWeekKey(column: Column): Column = {
@@ -97,7 +100,7 @@ object StatsGenerator extends SparkJob {
 
   def getNextWeekKey(column: Column): Column = {
     val DaysInWeek = 7
-    val newDay = date_add(column, DaysInWeek)
+    val newDay: Column = date_add(column, DaysInWeek)
     concat(year(newDay), lit("-"), weekofyear(newDay))
   }
 
@@ -106,7 +109,7 @@ object StatsGenerator extends SparkJob {
   }
 
   def getNextMonthKey(column: Column): Column = {
-    val newDay = add_months(column, 1)
+    val newDay: Column = add_months(column, 1)
     concat(year(newDay), lit("-"), month(newDay))
   }
 
@@ -114,11 +117,11 @@ object StatsGenerator extends SparkJob {
 
   def getNextYearKey(column: Column): Column = {
     val MonthsInYear = 12
-    val newDay = add_months(column, MonthsInYear)
+    val newDay: Column = add_months(column, MonthsInYear)
     year(newDay)
   }
 
-  def roundAt(n: Double, p: Int) = BigDecimal(n.toFloat).setScale(p, BigDecimal.RoundingMode.HALF_UP)
+  def roundAt(n: Double, p: Int): BigDecimal = BigDecimal(n.toFloat).setScale(p, BigDecimal.RoundingMode.HALF_UP)
 
 }
 

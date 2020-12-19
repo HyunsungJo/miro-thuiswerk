@@ -26,10 +26,12 @@ class LogParserTest extends AnyFlatSpec with should.Matchers {
   ))
 
   val someData = Seq(
-    Row(tsStr, 1L, "mobile", "0.01", "invite", "", Timestamp.valueOf(tsStr), Date.valueOf(dateStr))
+    Row("registered", tsStr, 1L, "mobile", "0.01", "invite", "", Timestamp.valueOf(tsStr), Date.valueOf(dateStr)),
+    Row("app_loaded", tsStr, 1L, "mobile", "0.01", "invite", "", Timestamp.valueOf(tsStr), Date.valueOf(dateStr))
   )
 
   val someSchema = List(
+    StructField("event", StringType, true),
     StructField("timestamp", StringType, true),
     StructField("initiator_id", LongType, true),
     StructField("device_type", StringType, true),
@@ -40,7 +42,7 @@ class LogParserTest extends AnyFlatSpec with should.Matchers {
     StructField("date", DateType, true)
   )
 
-  val someDF = spark.createDataFrame(
+  val someDf = spark.createDataFrame(
     spark.sparkContext.parallelize(someData),
     StructType(someSchema)
   )
@@ -48,17 +50,15 @@ class LogParserTest extends AnyFlatSpec with should.Matchers {
   "processTimestamp()" should "properly add columns time and date" in {
     val res = rawRegisterDs.transform(processTimestamp()).collect().head
     val time = res.getTimestamp(timeIndex).toString
-    assert(time === tsStr)
     val date = res.getDate(dateIndex).toString
+    assert(time === tsStr)
     assert(date == dateStr)
   }
 
-  "toEventDs()" should "transform DF to Event*DS" in {
-    val eventRegister = toEventDs(spark, someDF, "registered")
-      .collect().head.asInstanceOf[EventRegister]
-    val eventAppLoad = toEventDs(spark, someDF, "app_loaded")
-      .collect().head.asInstanceOf[EventAppLoad]
-    assert(eventRegister.event === "registered")
-    assert(eventAppLoad.event === "app_loaded")
+  "filterAndSelectColumns()" should "filter and select suitable rows and columns" in {
+    val registerColumns = someDf.transform(filterAndSelectColumns("registered")).columns
+    val appLoadColumns = someDf.transform(filterAndSelectColumns("app_loaded")).columns
+    assert(registerColumns.mkString(",") === Seq("channel", "event", "time", "initiator_id", "date").mkString(","))
+    assert(appLoadColumns.mkString(",") === Seq("device_type", "event", "time", "initiator_id", "date").mkString(","))
   }
 }
