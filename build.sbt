@@ -40,4 +40,6 @@ scalastyleFailOnWarning := false
 scalastyleFailOnError := true
 
 // GitHub settings
+githubOwner := "HyunsungJo"
+githubRepository := "miro-thuiswerk"
 githubTokenSource := TokenSource.GitConfig("github.token") || TokenSource.Environment("GITHUB_TOKEN")
