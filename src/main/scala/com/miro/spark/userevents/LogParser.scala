@@ -30,7 +30,7 @@ object LogParser extends SparkJob {
     val rawLogsTsDf: DataFrame = storage
       .rawLogs(inputPath)
       .transform(processTimestamp())
-      .repartition(200, col("event"))
+      .repartition(partitionSize, col("event"))
       .cache()
 
     // write register events as parquet

@@ -40,12 +40,12 @@ class ArgumentsParser {
         .action((x, c) => c.copy(outputPath = x))
         .text("path of output Parquet tables"),
 
-      opt[Int]('b', "bucket-size")
+      opt[Int]('b', "partition-size")
         .action((x, c) => c.copy(partitionSize = x))
         .validate(x =>
           if (0 < x && x <= 1000) { success }
-          else { failure("Value <bucket-size> must be in (0, 1000]") })
-        .text("bucket size of output Parquet tables"),
+          else { failure("Value <partition-size> must be in (0, 1000]") })
+        .text("partition size of output Parquet tables"),
 
       opt[Boolean]('w', "overwrite")
         .action((x, c) => c.copy(overwrite = x))
