@@ -10,7 +10,7 @@ case class LogParserArguments(
   storage: String = "local",
   inputPath: String = "./data/dataset.json",
   outputPath: String = "./spark-warehouse",
-  partitionSize: Int = 100,
+  partitionSize: Int = Constants.ConfDefaultPartitionSize,
   overwrite: Boolean = false
 ) extends Arguments
 
