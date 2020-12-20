@@ -1,8 +1,8 @@
 # MIRO: Event Log Processor
 
 Event Log Processor is a package containing a couple Apache Spark applications
-- [Event Log Parser](#Event Log Parser)
-- [Stats Generator](#Stats Generator)
+- [Event Log Parser](#event-log-parser)
+- [Stats Generator](#stats-generator)
 
 Please refer to [`DESIGN.md`](./DESIGN.md) for some notes on design considerations.
 

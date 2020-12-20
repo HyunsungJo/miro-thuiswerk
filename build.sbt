@@ -38,3 +38,6 @@ coverageFailOnMinimum := true
 // Scalastyle settings
 scalastyleFailOnWarning := false
 scalastyleFailOnError := true
+
+// GitHub settings
+githubTokenSource := TokenSource.GitConfig("github.token") || TokenSource.Environment("GITHUB_TOKEN")
