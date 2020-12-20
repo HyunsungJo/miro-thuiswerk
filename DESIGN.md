@@ -48,7 +48,6 @@ Some key design considerations for main objects and classes are as follows.
 - `scalatest v3.2.3` for testing
 - `sbt-scoverage v1.6.1` for code coverage
 - `scalastyle-sbt-plugin v1.0.0` for code linting
-- `sbt-github-packages v0.5.2` for GitHub publishing
 
 ## TODO
 - README

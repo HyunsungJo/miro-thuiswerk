@@ -8,7 +8,12 @@ Please refer to [`DESIGN.md`](./DESIGN.md) for some notes on design consideratio
 
 ## Build
 
-The project is a standard Spark Scala SBT project:
+Make sure you have the following software versions installed in your environment:
+- JDK 8
+- Scala 2.12.10
+- Apache Spark 3.0.1
+
+The project is built as a standard Scala SBT project:
 
 ```bash
 $ git clone https://github.com/HyunsungJo/miro-thuiswerk.git {project_root}
@@ -144,9 +149,5 @@ $ sbt assembly
 - Generate documents
 ```bash
 $ sbt doc
-```
-- Publish
-```bash
-$ sbt publish
 ```
 

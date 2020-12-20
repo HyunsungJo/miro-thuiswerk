@@ -6,8 +6,8 @@ scalaVersion := "2.12.10"
 val sparkVersion = "3.0.1"
 
 libraryDependencies ++= Seq(
-  "org.apache.spark" % "spark-core_2.12" % sparkVersion,
-  "org.apache.spark" % "spark-sql_2.12" % sparkVersion,
+  "org.apache.spark" %% "spark-core" % sparkVersion,
+  "org.apache.spark" %% "spark-sql" % sparkVersion,
   "com.github.scopt" %% "scopt" % "4.0.0" % Compile,
   "org.scalatest" %% "scalatest" % "3.2.3" % "test, it"
 )
@@ -39,9 +39,4 @@ coverageFailOnMinimum := true
 scalastyleFailOnWarning := false
 scalastyleFailOnError := true
 
-// GitHub settings
-githubOwner := "HyunsungJo"
-githubRepository := "miro-thuiswerk"
-githubTokenSource := TokenSource.GitConfig("github.token") || TokenSource.Environment("GITHUB_TOKEN")
-updateOptions := updateOptions.value.withGigahorse(false)
 

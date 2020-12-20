@@ -49,8 +49,5 @@ jobs:
       - name: Generate documents 📖
         run: sbt doc
 
-      - name: Publish 🚀
-        run: sbt publish
-
 
 
