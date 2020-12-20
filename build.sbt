@@ -43,3 +43,5 @@ scalastyleFailOnError := true
 githubOwner := "HyunsungJo"
 githubRepository := "miro-thuiswerk"
 githubTokenSource := TokenSource.GitConfig("github.token") || TokenSource.Environment("GITHUB_TOKEN")
+updateOptions := updateOptions.value.withGigahorse(false)
+
